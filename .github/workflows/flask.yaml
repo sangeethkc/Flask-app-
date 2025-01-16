@@ -24,12 +24,23 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no -i private_key.pem -r $(pwd) ubuntu@${{ secrets.EC2_PUBLIC_IP }}:/home/ubuntu/app
 
+
+      - name: Install Docker and Set Permissions
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+            sudo apt update
+            sudo apt install docker.io -y
+            sudo groupadd docker || true
+            sudo usermod -aG docker ubuntu
+            sudo systemctl start docker
+            sudo systemctl enable docker
+            newgrp docker
+          EOF
+
       - name: Deploy to EC2 (Build and Run Docker)
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            sudo usermod -aG docker ubuntu
-            newgrp docker
             cd /home/ubuntu/app
             docker build -t my-flask-app .
             docker run -d -p 80:80 my-flask-app
-          EO
+          EOF
