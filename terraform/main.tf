@@ -96,6 +96,7 @@ resource "aws_cloudfront_distribution" "jiitak_distribution" {
       https_port             = 443
       origin_protocol_policy = "http-only"
       origin_ssl_protocols   = ["TLSv1.2"]
+      
     }
   }
 
@@ -103,6 +104,7 @@ resource "aws_cloudfront_distribution" "jiitak_distribution" {
   is_ipv6_enabled     = true
   comment             = "CloudFront distribution for ${var.domain_name}"
   default_root_object = ""
+  aliases = [var.domain_name]
 
   default_cache_behavior {
     target_origin_id       = "EC2-${aws_instance.web_server.public_ip}"
@@ -127,6 +129,7 @@ resource "aws_cloudfront_distribution" "jiitak_distribution" {
     acm_certificate_arn      = "arn:aws:acm:us-east-1:${var.account_id}:certificate/${var.cert_id}"
     ssl_support_method        = "sni-only"
     minimum_protocol_version  = "TLSv1.2_2021"
+    
   }
 
   restrictions {
