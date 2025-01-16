@@ -43,8 +43,3 @@ variable "cert_id" {
 variable "ssh_key" {
   type = string
 }
-
-# variable "ec2_instance_ip" {
-#   description = "Public IP address of the EC2 instance"
-#   type        = string
-# }

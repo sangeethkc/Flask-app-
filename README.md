@@ -1,177 +1,81 @@
-# Web Server Project Documentation  
+# Deploy Flask Application to EC2 with Docker and Terraform
 
-## Overview  
-This project involves designing and implementing a web server using either Python (Flask/Django) or Node.js (Express/Nest.js). The project is dockerized, deployed on a cloud platform (AWS, Azure, or GCP), and uses Terraform to manage cloud infrastructure. A CI/CD pipeline is implemented to automate the deployment process.
+This repository contains the code for a Flask application and its automated deployment using Docker, Terraform, and GitHub Actions. The application serves as a basic web service running on AWS infrastructure.
 
----
+## Features
 
-## Services Used  
+- **Flask Web Application**: A simple Python Flask app to serve web content.
+- **Dockerization**: The app is containerized using Docker for easy deployment.
+- **CI/CD Pipeline**: Automated build and deployment pipeline using GitHub Actions.
+- **AWS Infrastructure**: EC2 instance provisioning, CloudFront setup, and Route 53 DNS configuration using Terraform.
 
-### 1. **Web Server**  
-   - **Technology**:  
-     - **Python**: Flask or Django  
-     - **Node.js**: Express or Nest.js  
-   - **Purpose**: Handles HTTP requests, serves responses, and provides APIs or web pages.  
+## Prerequisites
 
-### 2. **Docker**  
-   - **Purpose**:  
-     - Ensures consistent application behavior across environments.  
-     - Provides containerized deployment for easier scaling and maintenance.  
-   - **Configuration**: A `Dockerfile` is created to package the web server and its dependencies.  
-
-### 3. **Cloud Platform**  
-   - **Options**:  
-     - **AWS**: Elastic Beanstalk, ECS, or EC2  
-     - **Azure**: App Services or AKS  
-     - **Google Cloud Platform**: Cloud Run or GKE  
-   - **Purpose**: Deploys the dockerized web server for production use.  
-
-### 4. **CI/CD Tool**  
-   - **Options**: GitHub Actions, Jenkins, GitLab CI/CD  
-   - **Purpose**: Automates testing, building, and deployment processes.  
-
-### 5. **Terraform**  
-   - **Purpose**:  
-     - Defines and provisions cloud infrastructure.  
-     - Ensures reproducibility and version control for infrastructure.  
-   - **Configuration**: A set of `.tf` files are created to define cloud resources such as compute instances, networking, and storage.  
-
----
-
-## Implementation Details  
-
-### 1. **Building the Web Server**  
-   - Choose either Flask/Django (Python) or Express/Nest.js (Node.js) to create the web server.  
-   - Create routes to handle HTTP requests.  
-   - Example route in Flask:  
-     ```python
-     from flask import Flask
-
-     app = Flask(__name__)
-
-     @app.route('/')
-     def home():
-         return "Welcome to the Web Server!"
-
-     if __name__ == '__main__':
-         app.run(host='0.0.0.0', port=5000)
-     ```
-
-### 2. **Dockerizing the Application**  
-   - Create a `Dockerfile`:
-     ```dockerfile
-     # Base image
-     FROM python:3.9-slim
-
-     # Set working directory
-     WORKDIR /app
-
-     # Copy application code
-     COPY . .
-
-     # Install dependencies
-     RUN pip install -r requirements.txt
-
-     # Expose application port
-     EXPOSE 5000
-
-     # Run the application
-     CMD ["python", "run.py"]
-     ```
-
-### 3. **Deploying on a Cloud Platform**  
-   - Choose a cloud platform (e.g., AWS ECS or GCP Cloud Run).  
-   - Use the container service to deploy the dockerized application.  
-   - Example: Deploying to AWS ECS using Terraform:
-     ```hcl
-     resource "aws_ecs_cluster" "app_cluster" {
-       name = "web-server-cluster"
-     }
-
-     resource "aws_ecs_task_definition" "app_task" {
-       family                = "web-server-task"
-       container_definitions = jsonencode([{
-         name      = "web-server",
-         image     = "your-docker-image:latest",
-         memory    = 512,
-         cpu       = 256,
-         portMappings = [{
-           containerPort = 5000
-         }]
-       }])
-     }
-     ```
-
-### 4. **CI/CD Pipeline**  
-   - Implement a pipeline using GitHub Actions. Example `ci-cd.yml` file:
-     ```yaml
-     name: CI/CD Pipeline
-
-     on:
-       push:
-         branches:
-           - main
-
-     jobs:
-       build:
-         runs-on: ubuntu-latest
-         steps:
-           - uses: actions/checkout@v2
-           - name: Set up Python
-             uses: actions/setup-python@v2
-             with:
-               python-version: 3.9
-           - name: Install dependencies
-             run: |
-               python -m pip install --upgrade pip
-               pip install -r requirements.txt
-           - name: Test application
-             run: pytest
-
-       deploy:
-         needs: build
-         runs-on: ubuntu-latest
-         steps:
-           - name: Log in to AWS ECR
-             run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com
-           - name: Build Docker image
-             run: docker build -t web-server .
-           - name: Push to ECR
-             run: docker push <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/web-server
-           - name: Deploy to ECS
-             run: |
-               aws ecs update-service --cluster web-server-cluster --service web-server-service --force-new-deployment
-     ```
-
-### 5. **Infrastructure Configuration with Terraform**  
-   - Define resources like EC2 instances, ECS clusters, and S3 buckets in `.tf` files.  
-   - Example EC2 configuration:
-     ```hcl
-     resource "aws_instance" "web_server" {
-       ami           = "ami-12345678"
-       instance_type = "t2.micro"
-
-       tags = {
-         Name = "WebServerInstance"
-       }
-     }
-     ```
-
----
-
-## Deployment Workflow  
-
-1. **Development**: Write and test the application locally.  
-2. **Dockerization**: Create and test the Docker image locally.  
-3. **CI/CD**: Automate testing, building, and deployment via CI/CD pipelines.  
-4. **Infrastructure Provisioning**: Use Terraform to provision required cloud resources.  
-5. **Cloud Deployment**: Deploy the application to the chosen cloud platform.  
-6. **Monitoring**: Use cloud provider tools (e.g., CloudWatch, Stackdriver) to monitor the application.  
-
----
-
-## Conclusion  
-This project showcases the integration of web development, containerization, cloud deployment, and infrastructure as code, providing a robust solution for modern web applications.
+- Docker installed locally.
+- AWS account with necessary IAM permissions.
+- Terraform installed locally.
+- Python 3.9 or higher for local testing.
+- GitHub repository with the following secrets:
+  - `DOCKER_USERNAME`: Docker Hub username.
+  - `DOCKER_ACCESS_TOKEN`: Docker Hub access token.
+  - `EC2_PUBLIC_IP`: Public IP of the EC2 instance.
+  - `EC2_PRIVATE_KEY`: Private key for accessing the EC2 instance.
+  - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`: AWS credentials for Terraform.
 
 
-terraform apply -var-file="secrets.tfvars"
+## Deployment Process
+
+### 1. Build and Push Docker Image
+
+The CI/CD pipeline in `GitHub Actions` automates the build and push process:
+- Builds the Docker image from the `Dockerfile`.
+- Pushes the image to Docker Hub.
+
+### 2. EC2 Instance Setup
+
+Terraform provisions the EC2 instance and its security group:
+- The Flask app runs inside a Docker container on the EC2 instance.
+- Security groups allow HTTP and HTTPS access.
+
+### 3. CloudFront and Route 53
+
+Terraform configures:
+- **CloudFront**: For content distribution.
+- **Route 53**: For DNS configuration pointing to the CloudFront distribution.
+
+### 4. Automated Deployment
+
+The `deploy-container` job in GitHub Actions:
+- Pulls the latest Docker image to the EC2 instance.
+- Restarts the container with the updated image.
+```
+## Repository Structure
+
+```plaintext
+├── app/
+│   ├── run.py              # Flask application code
+│   └── requirements.txt    # Python dependencies
+│   └── Dockerfile          # Containerization
+├── terraform/
+│   ├── main.tf             # Terraform configuration
+│   ├── variables.tf        # Input variables for Terraform
+│   └── outputs.tf          # Terraform outputs
+├── .github/
+│   └── workflows/
+│       └── flask.yml       # GitHub Actions workflow
+├── Dockerfile              # Docker configuration for the Flask app
+└── README.md               # Project documentation
+```
+
+## Usage
+
+1. Commit and push changes to the `main` branch.
+2. GitHub Actions will trigger the pipeline, deploying the updated application.
+
+## Acknowledgments
+
+- Flask: Python microframework for web development.
+- Docker: For containerization.
+- Terraform: Infrastructure as Code.
+- AWS: Cloud platform for deployment.
+
