@@ -76,7 +76,7 @@ This project involves designing and implementing a web server using either Pytho
      EXPOSE 5000
 
      # Run the application
-     CMD ["python", "app.py"]
+     CMD ["python", "run.py"]
      ```
 
 ### 3. **Deploying on a Cloud Platform**  
