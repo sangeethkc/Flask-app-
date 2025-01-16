@@ -172,3 +172,6 @@ This project involves designing and implementing a web server using either Pytho
 
 ## Conclusion  
 This project showcases the integration of web development, containerization, cloud deployment, and infrastructure as code, providing a robust solution for modern web applications.
+
+
+terraform apply -var-file="secrets.tfvars"
