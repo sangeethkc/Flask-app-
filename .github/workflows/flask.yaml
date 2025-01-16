@@ -23,10 +23,11 @@ jobs:
       - name: Push Docker image to Docker Hub
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/flask-app:latest
+          echo "Image pushed to Docker Hub"
 
-  deploy:
-    runs-on: ubuntu-latest
+  install-docker:
     needs: build-and-push
+    runs-on: ubuntu-latest
 
     steps:
       - name: Set up SSH key
@@ -36,16 +37,37 @@ jobs:
         env:
           EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
 
-      - name: Pull and run Docker container on EC2
+      - name: Install Docker on EC2
         run: |
           ssh -t -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            # Update the system and install Docker if not installed
             sudo apt update
             sudo apt install docker.io -y
             sudo systemctl start docker
             sudo systemctl enable docker
             sudo usermod -aG docker ubuntu
-            newgrp docker
+          EOF
+
+      - name: Clean up temporary SSH key
+        run: rm private_key.pem
+
+  deploy-container:
+    runs-on: ubuntu-latest
+    needs: install-docker
+
+    steps:
+      - name: Set up SSH key
+        run: |
+          echo "$EC2_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+        env:
+          EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
+
+      - name: Deploy Docker container on EC2
+        run: |
+          ssh -t -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+            # Create a deployment script
+            cat << 'SCRIPT' > deploy.sh
+            #!/bin/bash
 
             # Pull the latest container image from Docker Hub
             docker pull ${{ secrets.DOCKER_USERNAME }}/flask-app:latest
@@ -56,6 +78,11 @@ jobs:
 
             # Run the updated container
             docker run -d --name flask-app -p 80:5000 ${{ secrets.DOCKER_USERNAME }}/flask-app:latest
+            SCRIPT
+
+            # Make the script executable and run it
+            chmod +x deploy.sh
+            ./deploy.sh
           EOF
 
       - name: Clean up temporary SSH key
