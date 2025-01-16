@@ -1,17 +1,20 @@
-     # Base image
-     FROM python:3.9-slim
+# Base image
+FROM python:3.9-slim
 
-     # Set working directory
-     WORKDIR /app
+# Set working directory
+WORKDIR /app
 
-     # Copy application code
-     COPY . .
+# Copy application code
+COPY . .
 
-     # Install dependencies
-     RUN pip install -r requirements.txt
+# Install dependencies
+RUN pip install -r requirements.txt
 
-     # Expose application port
-     EXPOSE 5000
+# Install Gunicorn
+RUN pip install gunicorn
 
-     # Run the application
-     CMD ["python", "app.py"]
+# Expose application port
+EXPOSE 5000
+
+# Run the application with Gunicorn
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
