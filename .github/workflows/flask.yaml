@@ -27,7 +27,9 @@ jobs:
       - name: Deploy to EC2 (Build and Run Docker)
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+            sudo usermod -aG docker ubuntu
+            newgrp docker
             cd /home/ubuntu/app
             docker build -t my-flask-app .
             docker run -d -p 80:80 my-flask-app
-          EOF
+          EO
