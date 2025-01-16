@@ -79,11 +79,14 @@ jobs:
             # Run the updated container
             docker run -d --name flask-app -p 80:5000 ${{ secrets.DOCKER_USERNAME }}/flask-app:latest
             SCRIPT
-
-            # Make the script executable and run it
+          EOF
+          
+      - name: Execute deployment script
+        run: |
+          ssh -t -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             chmod +x deploy.sh
             ./deploy.sh
-          EOF
+          EOF 
 
       - name: Clean up temporary SSH key
         run: rm private_key.pem
