@@ -20,36 +20,30 @@ jobs:
         env:
           EC2_PRIVATE_KEY: ${{ secrets.EC2_PRIVATE_KEY }}
 
-      - name: Copy files to EC2
+      - name: Copy only app folder to EC2
         run: |
           rsync -avz --exclude '.git' -e "ssh -o StrictHostKeyChecking=no -i private_key.pem" ./app/ ubuntu@${{ secrets.EC2_PUBLIC_IP }}:/home/ubuntu/app
 
-      - name: Install dependencies in virtual environment
-        run: |
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            cd /home/ubuntu/app
-            python3 -m venv venv
-            source venv/bin/activate
-            pip install -r requirements.txt
-          EOF
-
-
-      - name: Install Docker and Set Permissions
+      - name: Install Docker on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             sudo apt update
             sudo apt install docker.io -y
-            sudo groupadd docker || true
-            sudo usermod -aG docker ubuntu
             sudo systemctl start docker
             sudo systemctl enable docker
+            sudo usermod -aG docker ubuntu
             newgrp docker
           EOF
 
-      - name: Deploy to EC2 (Build and Run Docker)
+      - name: Build Docker image on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             cd /home/ubuntu/app
-            docker build -t my-flask-app .
-            docker run -d -p 80:80 my-flask-app
+            docker build -t flask-app .
+          EOF
+
+      - name: Run Docker container on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+            docker run -d -p 80:5000 flask-app
           EOF
