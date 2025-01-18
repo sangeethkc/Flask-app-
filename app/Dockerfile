@@ -10,9 +10,6 @@ COPY . .
 # Install dependencies
 RUN pip install -r requirements.txt
 
-# Install Gunicorn
-RUN pip install gunicorn
-
 # Expose application port
 EXPOSE 5000
 

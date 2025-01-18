@@ -2,6 +2,8 @@
 
 This repository contains the code for a Flask application and its automated deployment using Docker, Terraform, and GitHub Actions. The application serves as a basic web service running on AWS infrastructure.
 
+
+
 ## Features
 
 - **Flask Web Application**: A simple Python Flask app to serve web content.
@@ -22,6 +24,32 @@ This repository contains the code for a Flask application and its automated depl
   - `EC2_PRIVATE_KEY`: Private key for accessing the EC2 instance.
   - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`: AWS credentials for Terraform.
 
+## Terraform
+ 
+> SSH is not enabled via terraform on purpose. So you have to do it by editing Inbound rules in security groups in AWS or add the configuration under ```resource "aws_security_group" "web_sg"``` in `main.tf` file
+
+
+```
+  # SSH Access
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Allow all IPs
+  }
+```
+
+## Secrets files for Terraform (secrets.tfvars)
+
+```
+  ami_id         = "ami-0e1bed4f06a3b463d" // This can be obtained from AMI Catalogue from AWS
+  instance_type  = "t2.micro"
+  domain_name    = "site.example.com" // if you have a domain and is added to R53 add it here.
+  hosted_zone    = "example.com" 
+  account_id     = "123456789012" // your AWS Account ID
+  cert_id        = "i6l8whar-6rerq2beg-799uj-qxl4jca-1bp" // Certificate for my domain fo HTTPS 
+  ssh_key        = <<SSH Public Key>> // or you can copy the public key from your system to the EC2
+```
 
 ## Deployment Process
 
@@ -48,9 +76,8 @@ Terraform configures:
 The `deploy-container` job in GitHub Actions:
 - Pulls the latest Docker image to the EC2 instance.
 - Restarts the container with the updated image.
-```
-## Repository Structure
 
+## Repository Structure
 ```plaintext
 ├── app/
 │   ├── run.py              # Flask application code
@@ -58,13 +85,15 @@ The `deploy-container` job in GitHub Actions:
 │   └── Dockerfile          # Containerization
 ├── terraform/
 │   ├── main.tf             # Terraform configuration
-│   ├── variables.tf        # Input variables for Terraform
 │   └── outputs.tf          # Terraform outputs
+│   ├── variables.tf        # Input variables for Terraform
+│   └── secrets.tfvars      # Terraform secrets
 ├── .github/
 │   └── workflows/
 │       └── flask.yml       # GitHub Actions workflow
 ├── Dockerfile              # Docker configuration for the Flask app
 └── README.md               # Project documentation
+└── .gitignore              # Git ignore
 ```
 
 ## Usage
