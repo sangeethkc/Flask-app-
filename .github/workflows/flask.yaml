@@ -35,6 +35,7 @@ jobs:
 
   build-and-push:
     runs-on: ubuntu-latest
+    needs: install-docker
     if: ${{ github.event_name == 'push' && contains(github.event.head_commit.message, 'app/') }}
 
     steps:
